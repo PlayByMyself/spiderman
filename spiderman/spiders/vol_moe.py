@@ -9,7 +9,6 @@ import urllib3
 import urllib3.util
 from spiderman.items import ComicChapterLoader, ComicLoader
 from dotenv import load_dotenv
-from scrapy.shell import inspect_response
 from itemloaders.processors import MapCompose
 
 load_dotenv()
