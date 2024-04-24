@@ -197,6 +197,7 @@ class VolMoeSpider(scrapy.Spider):
         rows = response.xpath(
             '//*[@id="div_tabdata"][@class="book_list"]/tbody/tr[count(./td) = 5]'
         )
+        i = 0
         for row in rows:
             left_chapter_item_loader = ComicChapterLoader(selector=row)
             left_chapter_item_loader.add_xpath(
@@ -214,10 +215,12 @@ class VolMoeSpider(scrapy.Spider):
                 re=r"captcha_show\('(.+?)'\)",
             )
             if left_chapter_item_loader.get_output_value("name"):
+                order_prefix = f"[{i}]-"
                 left_chapter_item_loader.add_value(
                     "save_path",
-                    f"{Path(self.download_dir).joinpath(comic_name).joinpath(left_chapter_item_loader.get_output_value('name')).as_posix()}.epub",
+                    f"{Path(self.download_dir).joinpath(comic_name).joinpath(order_prefix + left_chapter_item_loader.get_output_value('name')).as_posix()}.epub",
                 )
+                i = i + 1
             yield left_chapter_item_loader.load_item()
             right_chapter_item_loader = ComicChapterLoader(selector=row)
             right_chapter_item_loader.add_xpath(
@@ -235,10 +238,12 @@ class VolMoeSpider(scrapy.Spider):
                 re=r"captcha_show\('(.+?)'\)",
             )
             if right_chapter_item_loader.get_output_value("name"):
+                order_prefix = f"[{i}]-"
                 right_chapter_item_loader.add_value(
                     "save_path",
-                    f"{Path(self.download_dir).joinpath(comic_name).joinpath(right_chapter_item_loader.get_output_value('name')).as_posix()}.epub",
+                    f"{Path(self.download_dir).joinpath(comic_name).joinpath(order_prefix + right_chapter_item_loader.get_output_value('name')).as_posix()}.epub",
                 )
+                i = i + 1
             yield right_chapter_item_loader.load_item()
 
     def add_host(self, path: str) -> str:

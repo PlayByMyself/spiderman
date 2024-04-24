@@ -5,15 +5,18 @@
 
 
 # useful for handling different item types with a single interface
+import asyncio
 from datetime import datetime, timedelta
 import io
 import logging
 import os
 import pickle
+import re
 from typing import DefaultDict, Literal, Optional
 import aiofiles
 import aiofiles.os
 import aiofiles.ospath
+from anyio import Path
 from httpx import AsyncClient
 import httpx
 import scrapy
@@ -27,8 +30,12 @@ from spiderman.middlewares import PersistenceCookiesMiddleware
 
 logger = logging.getLogger(__name__)
 
+
 def after_retry_log(retry_state: RetryCallState):
-    logger.warning(f"Retrying download of chapter '{retry_state.args[0].get_chapter_full_name(retry_state.args[1], retry_state.args[2])}' after {retry_state.attempt_number} attempts (last exception: {retry_state.outcome.exception() if retry_state.outcome else ''})")
+    logger.warning(
+        f"Retrying download of chapter '{retry_state.args[0].get_chapter_full_name(retry_state.args[1], retry_state.args[2])}' after {retry_state.attempt_number} attempts (last exception: {retry_state.outcome.exception() if retry_state.outcome else ''})"
+    )
+
 
 class ComicDownloadPipeline:
     async def process_item(self, item, spider):
@@ -68,6 +75,16 @@ class ComicDownloadPipeline:
             logger.info(
                 f"Chapter '{self.get_chapter_full_name(item, chapter)}' already exists, skipping"
             )
+            return
+        save_path_without_order = Path(chapter.save_path).with_name(
+            re.sub(r"^\[\d+\]-", "", Path(chapter.save_path).name)
+        )
+        if await aiofiles.ospath.exists(save_path_without_order):
+            logger.info(
+                f"Chapter '{self.get_chapter_full_name(item, chapter)}' already exists (without order), renaming"
+            )
+            await asyncio.sleep(0.1)
+            await aiofiles.os.rename(save_path_without_order, chapter.save_path)
             return
         if not await aiofiles.ospath.exists(os.path.dirname(chapter.save_path)):
             await aiofiles.os.makedirs(os.path.dirname(chapter.save_path))
