@@ -171,9 +171,11 @@ class VolMoeSpider(scrapy.Spider):
         page: Page = response.meta["playwright_page"]
         await page.wait_for_load_state("networkidle")
         await page.wait_for_load_state("domcontentloaded")
+        content = await page.content()
+        await page.close()
         new_response = HtmlResponse(
             url=page.url,
-            body=await page.content(),
+            body=content,
             encoding="utf-8",
             request=response.request,
         )
