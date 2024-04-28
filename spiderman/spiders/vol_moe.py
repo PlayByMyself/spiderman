@@ -173,6 +173,7 @@ class VolMoeSpider(scrapy.Spider):
         await page.wait_for_load_state("domcontentloaded")
         content = await page.content()
         await page.close()
+        await page.context.close()
         new_response = HtmlResponse(
             url=page.url,
             body=content,
