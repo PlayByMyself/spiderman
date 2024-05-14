@@ -16,6 +16,11 @@ python-dotenv = "^1.0.1"
 aiofiles = "^23.2.1"
 httpx = "^0.27.0"
 tenacity = "^8.2.3"
+fastapi = "^0.110.2"
+uvicorn = {extras = ["standard"], version = "^0.29.0"}
+apscheduler = "^3.10.4"
+twisted = "^24.3.0"
+cron-validator = "^1.0.8"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -35,5 +40,7 @@ module = [
     "playwright_stealth.*",
     "scrapy_splash.*",
     "itemloaders.processors.*",
+    "apscheduler.*",
+    "cron_validator"
 ]
 ignore_missing_imports = true
