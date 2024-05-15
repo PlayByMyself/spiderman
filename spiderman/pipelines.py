@@ -44,10 +44,7 @@ class ComicDownloadPipeline:
         if not item.chapters:
             return item
         for chapter in item.chapters:
-            # try:
             await self.download_chapter(item, chapter, spider)
-            # except Exception as e:
-            #     logger.error(f"Error downloading chapter '{self.get_chapter_full_name(item, chapter)}': {e}")
         return item
 
     @retry(
@@ -61,19 +58,20 @@ class ComicDownloadPipeline:
     ):
         if not chapter or not isinstance(chapter, ComicChapterItem):
             return
+        chapter_full_name = self.get_chapter_full_name(item, chapter)
         if not chapter.download_url:
             logger.warning(
-                f"Chapter '{self.get_chapter_full_name(item, chapter)}' has no download URL"
+                f"Chapter '{chapter_full_name}' has no download URL"
             )
             return
         if not chapter.save_path:
             logger.warning(
-                f"Chapter '{self.get_chapter_full_name(item, chapter)}' has no save path"
+                f"Chapter '{chapter_full_name}' has no save path"
             )
             return
         if await aiofiles.ospath.exists(chapter.save_path):
             logger.info(
-                f"Chapter '{self.get_chapter_full_name(item, chapter)}' already exists, skipping"
+                f"Chapter '{chapter_full_name}' already exists, skipping"
             )
             return
         save_path_without_order = Path(chapter.save_path).with_name(
@@ -81,7 +79,7 @@ class ComicDownloadPipeline:
         )
         if await aiofiles.ospath.exists(save_path_without_order):
             logger.info(
-                f"Chapter '{self.get_chapter_full_name(item, chapter)}' already exists (without order), renaming"
+                f"Chapter '{chapter_full_name}' already exists (without order), renaming"
             )
             await asyncio.sleep(0.1)
             await aiofiles.os.rename(save_path_without_order, chapter.save_path)
@@ -104,7 +102,7 @@ class ComicDownloadPipeline:
                     download_size = await f.tell()
                     if download_size > 0:
                         logger.info(
-                            f"Resuming download of chapter '{self.get_chapter_full_name(item, chapter)}' from {self.download_size_str(download_size)} bytes"
+                            f"Resuming download of chapter '{chapter_full_name}' from {self.download_size_str(download_size)} bytes"
                         )
                         headers.update(
                             {
@@ -121,7 +119,7 @@ class ComicDownloadPipeline:
             ) as response:
                 if not response.is_success:
                     logger.error(
-                        f"Failed to download chapter '{self.get_chapter_full_name(item, chapter)}'"
+                        f"Failed to download chapter '{chapter_full_name}'"
                     )
                     return
                 file_size = (
@@ -134,16 +132,16 @@ class ComicDownloadPipeline:
                 if response.status_code == 206 and content_range:
                     file_size = max(file_size, int(content_range.split("/")[-1]))
                     logger.debug(
-                        f"Chapter '{self.get_chapter_full_name(item, chapter)}' download from range '{content_range}'"
+                        f"Chapter '{chapter_full_name}' download from range '{content_range}'"
                     )
                 elif response.status_code == 200:
                     open_mode = "wb"
                     logger.debug(
-                        f"Chapter '{self.get_chapter_full_name(item, chapter)}' download from start"
+                        f"Chapter '{chapter_full_name}' download from start"
                     )
                 else:
                     logger.error(
-                        f"Failed to download chapter '{self.get_chapter_full_name(item, chapter)}'"
+                        f"Failed to download chapter '{chapter_full_name}'"
                     )
                     return
                 async with aiofiles.open(temp_downloading_file, open_mode) as f:
@@ -154,11 +152,11 @@ class ComicDownloadPipeline:
                         if (datetime.now() - last_time).total_seconds() >= 5:
                             last_time = datetime.now()
                             logger.debug(
-                                f"Downloading chapter '{self.get_chapter_full_name(item, chapter)} ({self.download_size_str(download_size)}/{self.download_size_str(file_size) or chapter.size or 'unknown'})'"
+                                f"Downloading chapter '{chapter_full_name} ({self.download_size_str(download_size)}/{self.download_size_str(file_size) or chapter.size or 'unknown'})'"
                             )
                 if download_size != file_size:
                     logger.warning(
-                        f"Chapter '{self.get_chapter_full_name(item, chapter)}' downloaded size ({self.download_size_str(download_size)}) doesn't match expected size ({self.download_size_str(file_size)})"
+                        f"Chapter '{chapter_full_name}' downloaded size ({self.download_size_str(download_size)}) doesn't match expected size ({self.download_size_str(file_size)})"
                     )
                     return
                 await aiofiles.os.rename(temp_downloading_file, chapter.save_path)
