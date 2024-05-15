@@ -5,6 +5,8 @@ description = ""
 authors = ["Ye Jun <yejun.code@gmail.com>"]
 readme = "README.md"
 
+packages = [{ include = "app" }, { include = "spiderman" }]
+
 [tool.poetry.dependencies]
 python = "^3.8"
 scrapy = "^2.11.0"
@@ -17,10 +19,11 @@ aiofiles = "^23.2.1"
 httpx = "^0.27.0"
 tenacity = "^8.2.3"
 fastapi = "^0.110.2"
-uvicorn = {extras = ["standard"], version = "^0.29.0"}
+uvicorn = { extras = ["standard"], version = "^0.29.0" }
 apscheduler = "^3.10.4"
 twisted = "^24.3.0"
 cron-validator = "^1.0.8"
+click = "^8.1.7"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -41,6 +44,9 @@ module = [
     "scrapy_splash.*",
     "itemloaders.processors.*",
     "apscheduler.*",
-    "cron_validator"
+    "cron_validator",
 ]
 ignore_missing_imports = true
+
+[tool.poetry.scripts]
+spiderman = "app.main:run"
