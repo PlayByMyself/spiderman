@@ -1,5 +1,5 @@
 import click
-from app.schduler import scheduler
+from .schduler import scheduler
 from fastapi import FastAPI
 from . import api
 
