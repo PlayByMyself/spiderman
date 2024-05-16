@@ -19,32 +19,19 @@ RUN --mount=type=cache,mode=0777,target=/root/.cache apt-get update \
     && apt-get autoclean \
     && apt-get autoremove \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-    
-
-FROM python-base as build-whl
-ENV POETRY_VERSION=1.7.1
-RUN --mount=type=cache,mode=0777,target=/root/.cache pip install poetry==$POETRY_VERSION
-WORKDIR $APP_PATH
-COPY . .
-RUN --mount=type=cache,mode=0777,target=/root/.cache poetry install --only main --no-interaction
-RUN poetry build
-
-FROM python-base as install-whl
-WORKDIR $APP_PATH/dist
-COPY --from=build-whl $APP_PATH/dist/*.whl .
-RUN python -m venv $VENV_PATH
-RUN --mount=type=cache,mode=0777,target=/root/.cache python -m pip install $(ls *.whl | tail -n 1)
-
 
 FROM python-base as prod
+ENV POETRY_VERSION=1.7.1
 ENV DEFAULT_USER=abc
 ENV DEFAULT_UID=1000
 ENV DEFAULT_GID=1000
-RUN groupadd -g $DEFAULT_GID ${DEFAULT_USER} && \
+WORKDIR $APP_PATH
+COPY . .
+RUN --mount=type=cache,mode=0777,target=/root/.cache groupadd -g $DEFAULT_GID ${DEFAULT_USER} && \
     useradd --system -m -s /bin/bash -u ${DEFAULT_UID} -g ${DEFAULT_GID} ${DEFAULT_USER} && \
     mkdir /config && \
-    chown -R ${DEFAULT_USER}:${DEFAULT_USER} /config
-COPY --from=install-whl $VENV_PATH $VENV_PATH
-COPY ./docker/entrypoint.sh /
-RUN chmod +x /entrypoint.sh
-ENTRYPOINT ["/entrypoint.sh"]
+    chown -R ${DEFAULT_USER}:${DEFAULT_USER} /config && \
+    pip install poetry==$POETRY_VERSION && \
+    poetry install --only main --no-interaction
+RUN chmod +x ./docker/entrypoint.sh
+ENTRYPOINT ["./docker/entrypoint.sh"]

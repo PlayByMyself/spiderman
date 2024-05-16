@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "spiderman"
-version = "0.1.0"
+version = "0.1.1"
 description = ""
 authors = ["Ye Jun <yejun.code@gmail.com>"]
 readme = "README.md"
