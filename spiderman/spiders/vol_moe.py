@@ -55,12 +55,13 @@ class VolMoeSpider(scrapy.Spider):
         download_dir: Optional[str] = os.getenv("VOL_MOE_DOWNLOAD_DIR"),
         user_name: Optional[str] = os.getenv("VOL_MOE_USER_NAME"),
         password: Optional[str] = os.getenv("VOL_MOE_PASSWORD"),
+        host: Optional[str] = os.getenv("VOL_MOE_HOST") or "https://kxo.moe",
         **kwargs: Any,
     ):
         assert user_name, "user_name is required"
         assert password, "password is required"
         super().__init__(name, **kwargs)
-        self.host = "https://vol.moe"
+        self.host = host
         self.start_url = f"{self.host}/myfollow.php"
         self.login_url = f"{self.host}/login_do.php"
         self.login_page_url = f"{self.host}/login.php"
@@ -163,6 +164,8 @@ class VolMoeSpider(scrapy.Spider):
             count = count + 1
 
     async def close_context_on_error(self, failure):
+        if "playwright_page" not in failure.request.meta:
+            return
         page = failure.request.meta["playwright_page"]
         await page.close()
         await page.context.close()
@@ -214,7 +217,7 @@ class VolMoeSpider(scrapy.Spider):
                 "download_url",
                 'td[2]/a[contains(., "下載")][contains(@onclick,"captcha_show")]/@onclick',
                 MapCompose(self.add_host),
-                re=r"captcha_show\('(.+?)'\)",
+                re=r"captcha_show\('(.+?)'",
             )
             if left_chapter_item_loader.get_output_value("name"):
                 order_prefix = f"[{i}]-"
@@ -237,7 +240,7 @@ class VolMoeSpider(scrapy.Spider):
                 "download_url",
                 'td[5]/a[contains(., "下載")][contains(@onclick,"captcha_show")]/@onclick',
                 MapCompose(self.add_host),
-                re=r"captcha_show\('(.+?)'\)",
+                re=r"captcha_show\('(.+?)'",
             )
             if right_chapter_item_loader.get_output_value("name"):
                 order_prefix = f"[{i}]-"
